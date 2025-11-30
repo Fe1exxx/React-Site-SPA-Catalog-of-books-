@@ -26,6 +26,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [favorite, setFavorite] = useState<number[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('all');
+  const [search, setSearch] = useState<string>('');
 
   useEffect(() => {
     async function loadBook() {
@@ -45,7 +46,7 @@ export default function App() {
     loadBook();
   }, []);
 
-  const displayedBooks = useMemo(() => {
+  const booksByMode = useMemo(() => {
     if (!book) return [];
     switch (viewMode) {
       case 'first-half':  return book.filter(p => p.userId <= 5);
@@ -53,6 +54,14 @@ export default function App() {
       default:            return book;
     }
   }, [book, viewMode]);
+
+  const displayedBooks = useMemo(() => {
+    if (!search.trim()) return booksByMode;
+    const term = search.toLowerCase();
+    return booksByMode.filter(post =>
+      post.title.toLowerCase().includes(term)
+    );
+  }, [booksByMode, search]);
 
   const sortedFavorite = useMemo(
     () => [...favorite].sort((a, b) => a - b),
@@ -90,22 +99,34 @@ export default function App() {
         </button>
       </div>
 
+      <input
+        type="text"
+        placeholder="Поиск по названию..."
+        className="border p-2 mb-4 w-64"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
       <ul>
-        {displayedBooks.map((el) => (
-          <li key={el.id} className="mb-2 flex items-center">
-            <strong>#{el.id}</strong>: {el.title}
-            <button
-              className="cursor-pointer ml-2 text-yellow-500"
-              onClick={() => {
-                if (!favorite.includes(el.id)) {
-                  setFavorite((prev) => [...prev, el.id]);
-                }
-              }}
-            >
-              ⭐
-            </button>
-          </li>
-        ))}
+        {displayedBooks.length === 0 ? (
+          <li>Ничего не найдено</li>
+        ) : (
+          displayedBooks.map((el) => (
+            <li key={el.id} className="mb-2 flex items-center">
+              <strong>#{el.id}</strong>: {el.title}
+              <button
+                className="cursor-pointer ml-2 text-yellow-500"
+                onClick={() => {
+                  if (!favorite.includes(el.id)) {
+                    setFavorite((prev) => [...prev, el.id]);
+                  }
+                }}
+              >
+                ⭐
+              </button>
+            </li>
+          ))
+        )}
       </ul>
     </div>
   );
